@@ -1,4 +1,4 @@
-from main_towns import *
+from swiss_towns import *
 from helper import *
 
 

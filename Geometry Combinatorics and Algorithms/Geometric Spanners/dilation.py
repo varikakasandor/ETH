@@ -1,33 +1,73 @@
-from main_towns import *
+from swiss_towns import *
 from helper import *
 
 
 def create_dilated_network():
-    G = nx.Graph()
+    G_main, G_steiner = nx.Graph(), nx.Graph()
     for town in main_towns.keys():
-        G.add_node(town)
-    create_figure(G, main_towns, "empty_network")
+        G_main.add_node(town)
+    for town in steiner_towns.keys():
+        G_steiner.add_node(town)
+    create_figure(G_main, main_towns, "tmp", nodelist=list(main_towns.keys()), font_size=12, save=False, show=False)
+    create_figure(G_steiner, steiner_towns, "dilation_network", nodelist=list(steiner_towns.keys()), font_size=6, save=True, show=True)
+
+
+def create_square():
+    G = nx.Graph()
+    pos_dict = {
+        0: (1, 1),
+        1: (1, -1),
+        2: (-1, -1),
+        3: (-1, 1)
+    }
+    G.add_nodes_from(list(range(4)))
+    for i in range(4):
+        for j in range(i + 1, 4):
+            if not (i == 0 and j == 2):
+                G.add_edge(i, j)
+    create_figure(G, pos_dict, "square", with_labels=False, node_size=300, node_color="black")
     return G
 
 
-def greedy_example_network():
+def create_pentagon():
     G = nx.Graph()
-    for town_1, coordinates_1 in main_towns.items():
-        G.add_node(town_1)
-    G.add_edge("Bern", "Luzern")
-    G.add_edge("Luzern", "Zurich")
-    G.add_edge("Zurich", "St Gallen")
-    G.add_edge("Lugano", "Geneva")
-    G.add_edge("Geneva", "Lausanne")
-    G.add_edge("Bern", "Lausanne")
-    G.add_edge("Bern", "Basel")
-    G.add_edge("Lugano", "St Gallen")
-    nx.draw_networkx_edges(G, pos=main_towns, edgelist=[("Bern", "St Gallen")], style="dashed", edge_color="green")
-    nx.draw_networkx_edges(G, pos=main_towns, edgelist=[("Bern", "Lugano")], style="dashed", edge_color="red")
-    create_figure(G, main_towns, "example_network")
+    pos_dict = calculate_coordinates_of_pentagon(dilate=False)
+    G.add_nodes_from(list(range(5)))
+    create_figure(G, pos_dict, "pentagon", with_labels=False, node_size=300, node_color="black")
+    return G
+
+
+def create_dilated_square():
+    G = nx.Graph()
+    pos_dict = {
+        0: (1, 1),
+        1: (1, -1),
+        2: (-1, -1),
+        3: (-1, 1),
+        4: (0, 0)
+    }
+    G.add_nodes_from(list(range(5)))
+    for i in range(4):
+        G.add_edge(i, (i + 1) % 4)
+        G.add_edge(i, 4)
+    create_figure(G, pos_dict, "dilated_square", with_labels=False, node_size=300, node_color="black")
+    return G
+
+
+
+def create_dilated_pentagon():
+    G = nx.Graph()
+    pos_dict = calculate_coordinates_of_pentagon(dilate=True)
+    G.add_nodes_from(list(range(6)))
+    for i in range(5):
+        G.add_edge(i, (i + 1) % 5)
+        G.add_edge(i, 5)
+    create_figure(G, pos_dict, "dilated_pentagon", with_labels=False, node_size=300, node_color="black")
     return G
 
 
 if __name__ == "__main__":
-    # create_empty_network()
-    greedy_example_network()
+    # create_dilated_network()
+    # create_square()
+    # create_dilated_square()
+    create_dilated_pentagon()

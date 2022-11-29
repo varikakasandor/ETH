@@ -1,7 +1,7 @@
 from scipy.spatial import Delaunay
 
 from helper import *
-from main_towns import *
+from swiss_towns import *
 
 
 def delaunay_spanner():
