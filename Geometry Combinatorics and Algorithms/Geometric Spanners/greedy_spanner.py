@@ -1,7 +1,6 @@
 from main_towns import *
 from helper import *
-import networkx as nx
-import matplotlib.pyplot as plt
+
 
 def greedy_spanner(t):
     G = nx.Graph()
@@ -16,16 +15,13 @@ def greedy_spanner(t):
         current_distance = None
         try:
             current_distance = nx.shortest_path_length(G, source=town_1, target=town_2, weight="distance")
-        except Exception as e:
+        except:
             pass
         if current_distance is None or current_distance > t * d:
             G.add_edge(town_1, town_2, distance=d)
-    nx.draw(G, pos=main_towns)
-    nx.draw_networkx_labels(G, pos=main_towns, labels={k:k for k in main_towns.keys()})
-    plt.savefig(f"greedy_spanner_t={t}.pdf", format="pdf")
-    plt.show()
+    create_figure(G, main_towns, f"greedy_spanner_t={t}")
     return G
 
 
 if __name__ == "__main__":
-    greedy_spanner(2.0)
+    greedy_spanner(1.2)
