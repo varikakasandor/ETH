@@ -88,6 +88,29 @@ MHstep <- function(net, nodeAttr, theta1, theta2, theta3){
   return(net)
 }
 
+
+calculate_statistics <- function(curr_net, nvertices, nodeAttr){
+  num_edges <- sum(curr_net)
+  num_reciprocal_dyads <- 0
+  for(i in 1:(nvertices - 1)){
+    for(j in 1:nvertices){
+      if(curr_net[i, j] == 1 && curr_net[j, i] == 1){
+        num_reciprocal_dyads <- num_reciprocal_dyads + 1
+      }
+    }
+  }
+  num_homophily_dyads <- 0
+  for(i in 1:nvertices){
+    for(j in 1:nvertices){
+      if(i != j && curr_net[i, j] == 1 && nodeAttr[i] == nodeAttr[j]){
+        num_homophily_dyads <- num_homophily_dyads + 1
+      }
+    }
+  }
+  return(c(num_edges, num_reciprocal_dyads, num_homophily_dyads))
+}
+
+
 # Markov Chain simulation -------------------------------------------------
 #' The function MarkovChain simulates the networks from the ERGM with 
 #' edge, mutual and nodematch statistics
@@ -132,36 +155,15 @@ MarkovChain <- function(net, nodeAttr, theta1, theta2, theta3,
   thinningSteps <- 0 # counter for the number of thinning steps
   netCounter <- 1 # counter for the number of simulated network
   
-  calculate_statistics <- function(curr_net){
-    num_edges <- sum(curr_net)
-    num_reciprocal_dyads <- 0
-    for(i in 1:(nvertices - 1)){
-      for(j in 1:nvertices){
-        if(curr_net[i, j] == 1 && curr_net[j, i] == 1){
-          num_reciprocal_dyads <- num_reciprocal_dyads + 1
-        }
-      }
-    }
-    num_homophily_dyads <- 0
-    for(i in 1:nvertices){
-      for(j in 1:nvertices){
-        if(i != j && curr_net[i, j] == 1 && nodeAttr[i] == nodeAttr[j]){
-          num_homophily_dyads <- num_homophily_dyads + 1
-        }
-      }
-    }
-    return(c(num_edges, num_reciprocal_dyads, num_homophily_dyads))
-  }
-  
   netSim[, , netCounter] = net
-  statSim[netCounter, ] = calculate_statistics(net)
+  statSim[netCounter, ] = (calculate_statistics)(net, nvertices, nodeAttr)
   
   
   while(netCounter < nNet){
+    net <- MHstep(net, nodeAttr, theta1, theta2, theta3)
     if(thinningSteps == thinning - 1){ # alternatively, == thinning, depending on interpretation
-      net <- MHstep(net, nodeAttr, theta1, theta2, theta3)
       netSim[, , netCounter] = net
-      statSim[netCounter, ] = calculate_statistics(net)
+      statSim[netCounter, ] = (calculate_statistics)(net, nvertices, nodeAttr)
       netCounter <- netCounter + 1
       thinningSteps <- 0
     }
@@ -173,3 +175,29 @@ MarkovChain <- function(net, nodeAttr, theta1, theta2, theta3,
   # Return the simulated networks and the statistics
   return(list(netSim = netSim, statSim = statSim))
 }
+
+
+test_thetas <- function(theta1, theta2, theta3, burnin = 10000, thinning = 1000, nNet = 1000){
+  
+  load(file='friend_net.Rda')
+  obs_net <- as.matrix(friend_net)
+  obs_attr = get.node.attr(friend_net, 'sex')
+  nvertices <- length(obs_attr)
+  start_net = matrix(0, nvertices, nvertices)
+  tmp <- MarkovChain(start_net, obs_attr, theta1, theta2, theta3, burnin, thinning, nNet)
+  netSim <- tmp[["netSim"]]
+  statSim <- tmp[["statSim"]]
+  obs_stats <- (calculate_statistics)(obs_net, nvertices, obs_attr)
+  print(obs_stats)
+  for(i in 1:3){
+    feature_list = statSim[, i]
+    num_smaller = length(feature_list[feature_list < obs_stats[i]])
+    num_larger = length(feature_list[feature_list > obs_stats[i]])
+    two_sided_p_value = min(num_smaller, num_larger) / length(feature_list)
+    cat(two_sided_p_value, num_smaller, num_larger, '\n')
+  }
+}
+
+test_thetas(-2.76, 0.68, 1.21)
+test_thetas(-2.76, 0.78, 1.21)
+

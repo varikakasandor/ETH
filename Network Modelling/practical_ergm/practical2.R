@@ -10,8 +10,8 @@
 # Working directory and packages
 #******************************************************************************************************
 # TODO: change this path to your working folder, with the folder knecht.zip unzipped:
-# setwd("")
-# list.files()
+setwd("")
+list.files()
 
 # Installing packages
 # install.packages(c("sna","network","igraph", "ggraph"))
